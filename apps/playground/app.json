@@ -1,0 +1,24 @@
+{
+  "expo": {
+    "name": "Kit Playground",
+    "slug": "kit-playground",
+    "version": "0.0.1",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "platforms": [
+      "android",
+      "web"
+    ],
+    "android": {
+      "package": "com.turnkeyagentic.kitplayground"
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "single"
+    },
+    "plugins": [
+      "expo-asset"
+    ]
+  }
+}

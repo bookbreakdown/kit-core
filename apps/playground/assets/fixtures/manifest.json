@@ -1,0 +1,40 @@
+{
+  "id": "treasure-island",
+  "title": "Treasure Island",
+  "content": {
+    "url": "asset:fixtures/treasure-island.md",
+    "byteSize": 372243,
+    "sha256": "ee9fbbda1325d1eae00ee2ef63bd364e6614c30a3480c2f31ffb1d484f2997dc",
+    "wordCount": 68703
+  },
+  "cover": null,
+  "voices": [
+    {
+      "voice": "demo",
+      "label": "Demo",
+      "chapters": [
+        {
+          "chapterNumber": 1,
+          "title": "Tone A",
+          "durationSeconds": 5,
+          "backMatter": false,
+          "url": "asset:audio/tone-a.mp3",
+          "byteSize": 40586,
+          "sha256": "b8714e0555b848d3c2a497eccf02228a2d8a30f9130b1d1db1f579fbe7f583e7"
+        },
+        {
+          "chapterNumber": 2,
+          "title": "Tone B",
+          "durationSeconds": 5,
+          "backMatter": false,
+          "url": "asset:audio/tone-b.mp3",
+          "byteSize": 40586,
+          "sha256": "e20ec6f041dc1b0f30e7712a98927f099d35749b0b24d1b90c7cb7bff9626270"
+        }
+      ]
+    }
+  ],
+  "gated": true,
+  "offlineValidUntil": "2026-10-25T02:34:30.873Z",
+  "finishChapterIndex": 0
+}

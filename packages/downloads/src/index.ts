@@ -1,0 +1,10 @@
+export const PACKAGE = { name: '@libraryofages/downloads', version: '0.0.2' } as const;
+export { DownloadsProvider, useDownloads, useDownloadsOptional } from './DownloadsProvider';
+export { DownloadsList } from './ui/DownloadsList';
+export { transfer } from './transfer';
+export { createStorage, IndexedDbStorage, toHex } from './storage';
+export type { BundleStorage, WriteResult, ObjectUrlFactory } from './storage';
+export { createConnectivity, allowsLargeTransfer } from './connectivity';
+export type { Connectivity, ConnectionState, ConnectionType } from './connectivity';
+export { textKey, audioKey, fileKey } from './types';
+export type { DownloadItem, DownloadItemState, DownloadKind, DownloadFile, DownloadRecord, DownloadsApi, DownloadsContextValue, DownloadsProviderProps, DownloadsSettings } from './types';

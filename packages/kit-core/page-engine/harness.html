@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Page engine harness</title>
+<style>
+  html, body { margin: 0; height: 100%; font-family: Georgia, serif; background: #fff; color: #111; }
+  #app { display: flex; flex-direction: column; height: 100dvh; }
+  #toolbar { flex: none; display: flex; gap: 8px; align-items: center; padding: 6px 8px; border-bottom: 1px solid #ddd; font: 14px system-ui, sans-serif; }
+  #container { flex: 1; overflow: hidden; padding: 0 24px; }
+  #column { height: 100%; padding-top: 1rem; padding-bottom: 1rem; line-height: 1.8; }
+  #column p { margin: 0 0 1em; }
+  #column h3 { text-align: center; margin: 1.2em 0 0.8em; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="toolbar">
+    <button id="prev">Prev</button>
+    <button id="next">Next</button>
+    <label>font <input id="font" type="number" min="12" max="32" value="18" style="width:3.5em" /></label>
+    <span id="pos">–</span>
+    <span id="pct"></span>
+    <span id="tap"></span>
+  </div>
+  <div id="container"><div id="column"></div></div>
+</div>
+<script src="/node_modules/markdown-it/dist/markdown-it.js"></script>
+<script type="module">
+  import { createPageEngine } from '/packages/kit-core/page-engine/engine.js';
+  
+  const md = window.markdownit({ html: false, linkify: false });
+  const column = document.getElementById('column');
+  const container = document.getElementById('container');
+  const raw = await (await fetch('/packages/kit-core/fixtures/treasure-island.md')).text();
+  // The same chapter split the parser uses: take the first ### chapter of the fixture.
+  const parts = raw.replace(/```\w*\n?/g, '').replace(/^[ \t]+/gm, '').replace(/^##\s[^\n]+\n+/, '').split(/^###\s+/m).filter(Boolean);
+  const chapter = parts[0] || raw;
+  const title = chapter.split('\n')[0];
+  column.innerHTML = `<h3>${title}</h3>` + md.render(chapter.split('\n').slice(1).join('\n'));
+
+  const engine = createPageEngine(container, {
+    onPage: (page, count, pct) => {
+      document.getElementById('pos').textContent = `${page + 1}/${count}`;
+      document.getElementById('pct').textContent = `${pct}%`;
+    },
+    onTap: (zone) => { document.getElementById('tap').textContent = zone; },
+  });
+  window.engine = engine;
+  document.fonts?.ready.then(() => engine.layout());
+  engine.layout();
+  document.getElementById('prev').onclick = () => engine.prev();
+  document.getElementById('next').onclick = () => engine.next();
+  document.getElementById('font').oninput = (e) => { column.style.fontSize = `${e.target.value}px`; engine.relayoutKeepingPosition(); };
+
+  // Exposed for the driven test: the first text node currently visible in the viewport.
+  window.firstVisibleText = () => {
+    // The text under the top-left of the page area: what a reader sees first. Sampled down
+    // the left edge until a text node is hit (headings are centred, so start a little in).
+    const rect = container.getBoundingClientRect();
+    for (let y = rect.top + 8; y < rect.bottom; y += 12) {
+      for (const x of [rect.left + 30, rect.left + rect.width / 2]) {
+        const r = document.caretRangeFromPoint(x, y);
+        if (r && r.startContainer && r.startContainer.nodeType === Node.TEXT_NODE) {
+          const t = r.startContainer.textContent;
+          const from = Math.max(0, t.lastIndexOf(' ', r.startOffset) + 1);
+          const s = t.slice(from).trim();
+          if (s) return s.slice(0, 40);
+        }
+      }
+    }
+    return '';
+  };
+  window.harnessReady = true;
+</script>
+</body>
+</html>

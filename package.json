@@ -1,0 +1,20 @@
+{
+  "name": "mobile-kit",
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "test": "npm run test --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present"
+  },
+  "devDependencies": {
+    "@react-native/jest-preset": "^0.86.3",
+    "expo": "~57.0.25",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "react-native": "0.86.3",
+    "typescript": "^5.3.0"
+  }
+}

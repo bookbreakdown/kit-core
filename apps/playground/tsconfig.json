@@ -1,0 +1,33 @@
+{
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "strict": true,
+    "paths": {
+      "@libraryofages/kit-core": [
+        "../../packages/kit-core/src/index.ts"
+      ],
+      "@libraryofages/reader": [
+        "../../packages/reader/src/index.ts"
+      ],
+      "@libraryofages/player": [
+        "../../packages/player/src/index.ts"
+      ],
+      "@libraryofages/downloads": [
+        "../../packages/downloads/src/index.ts"
+      ]
+    }
+  },
+  "include": [
+    "**/*.ts",
+    "**/*.tsx",
+    "../../packages/*/src/**/*.ts",
+    "assets.d.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "dist-android",
+    "e2e",
+    "../../packages/*/src/**/__tests__/**"
+  ]
+}

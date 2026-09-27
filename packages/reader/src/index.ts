@@ -1,0 +1,13 @@
+export const PACKAGE = { name: '@libraryofages/reader', version: '0.0.2' } as const;
+export { Reader, furthestDismissedKey } from './Reader';
+export type { ReaderProps, ReaderSettings, ReaderHandle, ReaderThemes, ReaderLabels, SettingsStore } from './types';
+export { useReaderSettings, DEFAULT_SETTINGS, SETTINGS_KEY, clampSettings } from './useReaderSettings';
+export { useReadingSpeed, DEFAULT_WPM, WPM_KEY } from './useReadingSpeed';
+export { usePosition } from './usePosition';
+export { bookPercent, locate, wordOffsets, formatDuration } from './bookMath';
+export { buildReaderDocument, themeVariables } from './document';
+export type { HostMessage, HostCommand } from './document';
+export { renderChapterHtml } from './markdown';
+export { PageHost } from './host';
+export type { PageHostProps, PageHostHandle, PageHostComponent } from './host/types';
+export { DEFAULT_LABELS } from './labels';
