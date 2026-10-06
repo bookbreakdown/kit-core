@@ -225,3 +225,28 @@ test('volume keys turn pages only when enabled; the handle exposes goToPct by bo
   expect(last.cmd).toBe('goToPct');
   expect(last.pct).toBeGreaterThan(0);
 });
+
+test('onSheetChange fires on sheet transitions only, and false on unmount if a sheet was open', async () => {
+  const onSheetChange = jest.fn();
+  const { getByTestId, unmount } = mount({ onSheetChange });
+  await ready();
+  expect(onSheetChange).not.toHaveBeenCalled();
+  msg({ type: 'tap', zone: 'center' });
+  fireEvent.press(getByTestId('reader-settings-button'));
+  expect(onSheetChange.mock.calls).toEqual([[true]]);
+  msg({ type: 'tap', zone: 'center' }); // closes sheet
+  expect(onSheetChange.mock.calls).toEqual([[true], [false]]);
+  msg({ type: 'tap', zone: 'center' });
+  fireEvent.press(getByTestId('reader-toc-button'));
+  expect(onSheetChange.mock.calls).toEqual([[true], [false], [true]]);
+  unmount();
+  expect(onSheetChange.mock.calls).toEqual([[true], [false], [true], [false]]);
+});
+
+test('onSheetChange is not called on unmount when no sheet was open', async () => {
+  const onSheetChange = jest.fn();
+  const { unmount } = mount({ onSheetChange });
+  await ready();
+  unmount();
+  expect(onSheetChange).not.toHaveBeenCalled();
+});

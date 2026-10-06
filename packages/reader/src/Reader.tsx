@@ -36,7 +36,7 @@ export const Reader = forwardRef<ReaderHandle, ReaderProps>(function Reader(prop
   const {
     bookId, document, themes, positionStore, settingsStore, furthest = null, title, onBack,
     onPositionChange, onChapterChange, onChapterEnd, onBookEnd, onSelection, renderNotice, renderLocked, insertPages,
-    hostComponent,
+    hostComponent, onSheetChange,
   } = props;
   const labels: ReaderLabels = useMemo(() => ({ ...DEFAULT_LABELS, ...(props.labels ?? {}) }), [props.labels]);
   const PageHost = hostComponent ?? DefaultPageHost;
@@ -59,6 +59,20 @@ export const Reader = forwardRef<ReaderHandle, ReaderProps>(function Reader(prop
   const [insert, setInsert] = useState<{ chapter: number; k: number } | null>(null);
   const [started, setStarted] = useState(false);
   const [furthestDismissed, setFurthestDismissed] = useState<string | null | undefined>(undefined);
+
+  // Tell the host when one of the reader's own sheets (text settings, contents) opens or closes: transitions only,
+  // and a final `false` on unmount if one was open.
+  const onSheetChangeRef = useRef(onSheetChange); onSheetChangeRef.current = onSheetChange;
+  const sheetReported = useRef(false);
+  const sheetOpen = sheet !== null;
+  useEffect(() => {
+    if (sheetReported.current === sheetOpen) return;
+    sheetReported.current = sheetOpen;
+    onSheetChangeRef.current?.(sheetOpen);
+  }, [sheetOpen]);
+  useEffect(() => () => {
+    if (sheetReported.current) { sheetReported.current = false; onSheetChangeRef.current?.(false); }
+  }, []);
 
   const pending = useRef<Pending>(null);
   const host = useRef<PageHostHandle | null>(null);

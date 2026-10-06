@@ -74,6 +74,8 @@ export interface ReaderProps {
   onChapterEnd?(index: number): void;
   onBookEnd?(): void;
   onSelection?(action: 'copy' | 'share' | 'define', text: string): void;
+  /** The text-settings or contents sheet opened (true) or closed (false); called on transitions only, and with false on unmount if one was open. */
+  onSheetChange?(open: boolean): void;
   renderNotice?(): ReactNode;
   renderLocked?(): ReactNode;
   /** Full-screen host views shown between this chapter's last page and the next chapter. */
