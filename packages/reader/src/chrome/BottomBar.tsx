@@ -12,10 +12,11 @@ export interface BottomBarProps {
   onJump(bookPct: number): void;
   backLabel: string | null;
   onBack(): void;
+  bottomInset?: number;
 }
 
 /** Go-to slider by book percent with a live bubble, plus the "back to" pill after a jump. */
-export function BottomBar({ theme, bookPct, describe, onJump, backLabel, onBack }: BottomBarProps) {
+export function BottomBar({ theme, bookPct, describe, onJump, backLabel, onBack, bottomInset = 0 }: BottomBarProps) {
   const c = chromeColors(theme);
   const [width, setWidth] = useState(0);
   const [drag, setDrag] = useState<number | null>(null);
@@ -29,7 +30,7 @@ export function BottomBar({ theme, bookPct, describe, onJump, backLabel, onBack 
   };
 
   return (
-    <View style={[styles.bar, { backgroundColor: c.bar, borderTopColor: c.border }]} testID="reader-bottombar">
+    <View style={[styles.bar, { backgroundColor: c.bar, borderTopColor: c.border, bottom: FOOTER_HEIGHT + bottomInset }]} testID="reader-bottombar">
       {backLabel ? (
         <Pressable onPress={onBack} style={[styles.pill, { borderColor: c.border, backgroundColor: c.page }]} testID="reader-back-pill" accessibilityRole="button">
           <Text style={[styles.pillText, { color: c.text }]}>{backLabel}</Text>

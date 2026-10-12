@@ -9,12 +9,13 @@ export interface TopBarProps {
   onBack?(): void;
   onToc(): void;
   onSettings(): void;
+  topInset?: number;
 }
 
-export function TopBar({ theme, title, labels, onBack, onToc, onSettings }: TopBarProps) {
+export function TopBar({ theme, title, labels, onBack, onToc, onSettings, topInset = 0 }: TopBarProps) {
   const c = chromeColors(theme);
   return (
-    <View style={[styles.bar, { backgroundColor: c.bar, borderBottomColor: c.border }]} testID="reader-topbar">
+    <View style={[styles.bar, { backgroundColor: c.bar, borderBottomColor: c.border, paddingTop: topInset, height: BAR_HEIGHT + topInset }]} testID="reader-topbar">
       <Pressable onPress={onBack} disabled={!onBack} style={styles.button} testID="reader-back" accessibilityRole="button" accessibilityLabel={labels.back}>
         <Text style={[styles.icon, { color: onBack ? c.text : c.muted }]}>‹</Text>
       </Pressable>

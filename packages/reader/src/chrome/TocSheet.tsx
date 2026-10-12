@@ -5,6 +5,7 @@ import { Sheet } from './Sheet';
 import { chromeColors } from './styles';
 
 export interface TocSheetProps {
+  bottomInset?: number;
   theme: Theme;
   document: BookDocument;
   currentIndex: number;
@@ -14,11 +15,11 @@ export interface TocSheetProps {
 }
 
 /** Chapter list; the current chapter is marked and back matter sits under a divider. */
-export function TocSheet({ theme, document, currentIndex, backMatterLabel, onPick, onClose }: TocSheetProps) {
+export function TocSheet({ theme, document, currentIndex, backMatterLabel, onPick, onClose, bottomInset = 0 }: TocSheetProps) {
   const c = chromeColors(theme);
   const finish = document.finishChapterIndex;
   return (
-    <Sheet theme={theme} testID="reader-toc" onClose={onClose}>
+    <Sheet theme={theme} testID="reader-toc" onClose={onClose} bottomInset={bottomInset}>
       {document.chapters.map((ch, i) => {
         const active = i === currentIndex;
         const divider = finish !== null && i === finish + 1;

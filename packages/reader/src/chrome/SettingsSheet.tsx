@@ -6,6 +6,7 @@ import { Sheet } from './Sheet';
 import { chromeColors } from './styles';
 
 export interface SettingsSheetProps {
+  bottomInset?: number;
   theme: Theme;
   settings: ReaderSettings;
   labels: ReaderLabels;
@@ -51,10 +52,10 @@ function Stepper({ value, display, onDown, onUp, theme, testPrefix }: { value: n
 }
 
 /** Every FR-READ-14 control; each change is applied live by the Reader through `setSettings`. */
-export function SettingsSheet({ theme, settings, labels, onChange, onClose }: SettingsSheetProps) {
+export function SettingsSheet({ theme, settings, labels, onChange, onClose, bottomInset = 0 }: SettingsSheetProps) {
   const c = chromeColors(theme);
   return (
-    <Sheet theme={theme} testID="reader-settings" onClose={onClose}>
+    <Sheet theme={theme} testID="reader-settings" onClose={onClose} bottomInset={bottomInset}>
       <Row label={labels.theme} color={c.muted}>
         <Choice theme={theme} testPrefix="settings-theme" value={settings.theme} onPick={(v) => onChange({ theme: v })}
           options={[{ v: 'light', label: 'Light' }, { v: 'sepia', label: 'Sepia' }, { v: 'dark', label: 'Dark' }, { v: 'system', label: 'System' }]} />

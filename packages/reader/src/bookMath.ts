@@ -33,11 +33,13 @@ export function locate(document: BookDocument, bookPct: number): { chapterIndex:
   return { chapterIndex: n - 1, offsetPct: 100 };
 }
 
-export function formatDuration(minutes: number, l: { about: string; lessThanAMinute: string; hourShort: string; minuteShort: string }): string {
+/** Kindle's wording by default: "4 hrs 28 mins", "1 hr", "1 min". `about` prefixes it when a host sets one. */
+export function formatDuration(minutes: number, l: { about: string; lessThanAMinute: string; hourShort: string; hoursShort: string; minuteShort: string; minutesShort: string }): string {
   if (minutes < 1) return l.lessThanAMinute;
   const m = Math.round(minutes);
-  if (m < 60) return `${l.about} ${m} ${l.minuteShort}`;
+  const mins = (n: number) => `${n} ${n === 1 ? l.minuteShort : l.minutesShort}`;
   const h = Math.floor(m / 60);
   const rest = m % 60;
-  return rest === 0 ? `${l.about} ${h} ${l.hourShort}` : `${l.about} ${h} ${l.hourShort} ${rest} ${l.minuteShort}`;
+  const body = h === 0 ? mins(m) : `${h} ${h === 1 ? l.hourShort : l.hoursShort}${rest === 0 ? '' : ` ${mins(rest)}`}`;
+  return l.about ? `${l.about} ${body}` : body;
 }

@@ -4,13 +4,13 @@ import type { Theme } from '@libraryofages/kit-core';
 import { chromeColors } from './styles';
 
 /** A bottom sheet drawn inside the reader (no Modal so it works identically under test and on web). */
-export function Sheet({ theme, testID, onClose, children }: { theme: Theme; testID: string; onClose(): void; children: ReactNode }) {
+export function Sheet({ theme, testID, onClose, children, bottomInset = 0 }: { theme: Theme; testID: string; onClose(): void; children: ReactNode; bottomInset?: number }) {
   const c = chromeColors(theme);
   return (
     <View style={StyleSheet.absoluteFill} testID={testID}>
       <Pressable style={styles.scrim} onPress={onClose} testID={`${testID}-scrim`} accessibilityRole="button" />
       <View style={[styles.sheet, { backgroundColor: c.bar, borderTopColor: c.border }]}>
-        <ScrollView contentContainerStyle={styles.content}>{children}</ScrollView>
+        <ScrollView contentContainerStyle={[styles.content, { paddingBottom: 16 + bottomInset }]}>{children}</ScrollView>
       </View>
     </View>
   );

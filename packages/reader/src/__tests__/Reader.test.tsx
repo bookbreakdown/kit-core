@@ -8,10 +8,11 @@ import type { PageHostHandle, PageHostProps } from '../host/types';
 import type { ReaderHandle, ReaderThemes, SettingsStore } from '../types';
 
 // --- fakes ----------------------------------------------------------------------------
-const hostApi: { onMessage: ((m: HostMessage) => void) | null; sent: unknown[]; mounts: number } = { onMessage: null, sent: [], mounts: 0 };
+const hostApi: { onMessage: ((m: HostMessage) => void) | null; sent: unknown[]; mounts: number; html: string } = { onMessage: null, sent: [], mounts: 0, html: '' };
 
-function FakeHost({ onMessage, hostRef }: PageHostProps) {
+function FakeHost({ onMessage, hostRef, html }: PageHostProps) {
   hostApi.onMessage = onMessage;
+  hostApi.html = html;
   useEffect(() => {
     hostApi.mounts += 1;
     const handle: PageHostHandle = { send: (cmd) => { hostApi.sent.push(cmd); } };
@@ -59,15 +60,40 @@ function mount(extra: Partial<React.ComponentProps<typeof Reader>> = {}, setting
 }
 
 // --- tests ----------------------------------------------------------------------------
-test('footer shows "2 of 5 in chapter" after page messages, and cycles modes on tap', async () => {
+test('footer reads like Kindle: time left in book with the percent on the right; a tap cycles chapter time, then page', async () => {
   const { getByTestId } = mount();
   await ready();
   msg({ type: 'page', page: 1, count: 5, offsetPct: 25 });
+  expect(String(getByTestId('reader-footer-text').props.children)).toMatch(/^(\d+ hrs? )?\d+ mins? left in book$|^less than a min left in book$/);
+  expect(getByTestId('reader-footer-percent').props.children).toBe('11%');
+  fireEvent.press(getByTestId('reader-footer'));
+  expect(String(getByTestId('reader-footer-text').props.children)).toMatch(/left in chapter$/);
+  fireEvent.press(getByTestId('reader-footer'));
   expect(getByTestId('reader-footer-text').props.children).toBe('2 of 5 in chapter');
-  fireEvent.press(getByTestId('reader-footer'));
-  expect(getByTestId('reader-footer-text').props.children).toBe('11% of book');
-  fireEvent.press(getByTestId('reader-footer'));
-  expect(String(getByTestId('reader-footer-text').props.children)).toMatch(/^about \d+ min left in chapter · about \d+ min left in book$/);
+  expect(getByTestId('reader-footer-percent').props.children).toBe('11%');
+});
+
+test('insets keep the page, footer and bars clear of the status and gesture bars; chrome changes are reported', async () => {
+  const onChromeChange = jest.fn();
+  const { getByTestId } = mount({ insets: { top: 40, bottom: 24 }, onChromeChange });
+  await ready();
+  const slot = getByTestId('reader-host-slot');
+  expect(slot.props.style).toEqual(expect.arrayContaining([expect.objectContaining({ top: 40 })]));
+  expect(getByTestId('reader-footer').props.style).toEqual(expect.arrayContaining([expect.objectContaining({ bottom: 24 })]));
+  expect(onChromeChange).toHaveBeenLastCalledWith(false);
+  msg({ type: 'tap', zone: 'center' });
+  expect(onChromeChange).toHaveBeenLastCalledWith(true);
+  expect(getByTestId('reader-topbar').props.style).toEqual(expect.arrayContaining([expect.objectContaining({ paddingTop: 40 })]));
+});
+
+test('a host that drives screen brightness gets the setting and the page is never dimmed', async () => {
+  const onBrightness = jest.fn();
+  const settings = memorySettings();
+  await settings.set('reader.settings', JSON.stringify({ brightness: 0.6 }));
+  mount({ onBrightness }, settings);
+  await ready();
+  await waitFor(() => expect(onBrightness).toHaveBeenCalledWith(0.6));
+  expect(hostApi.html).toContain('--dim: 0;');
 });
 
 test('chrome is hidden by default; a centre tap shows the top bar; a right tap hides it', async () => {
@@ -95,6 +121,8 @@ test('crossing the last page moves to the next chapter (onChapterEnd) and onBook
   msg({ type: 'ready' });
   expect(hostApi.sent).toContainEqual({ cmd: 'goTo', page: 0 });
   msg({ type: 'page', page: 0, count: 3, offsetPct: 0 });
+  fireEvent.press(getByTestId('reader-footer'));
+  fireEvent.press(getByTestId('reader-footer'));
   expect(getByTestId('reader-footer-text').props.children).toBe('1 of 3 in chapter');
   // back-crossing lands on the previous chapter's last page
   msg({ type: 'edge', direction: 'prev' });
@@ -141,6 +169,8 @@ test('restore: a saved page index is applied on ready; positions are recorded fr
   expect(hostApi.sent).toContainEqual({ cmd: 'goTo', page: 3 });
   msg({ type: 'page', page: 3, count: 6, offsetPct: 60 });
   expect(onPositionChange).toHaveBeenCalledWith({ chapterIndex: 1, offsetPct: 60, pageIndex: 3 });
+  fireEvent.press(getByTestId('reader-footer'));
+  fireEvent.press(getByTestId('reader-footer'));
   expect(getByTestId('reader-footer-text').props.children).toBe('4 of 6 in chapter');
 });
 

@@ -13,6 +13,7 @@ import { useReaderSettings } from './useReaderSettings';
 import { minutesFor, useReadingSpeed } from './useReadingSpeed';
 import { BottomBar } from './chrome/BottomBar';
 import { Footer, type FooterMode } from './chrome/Footer';
+import { FOOTER_HEIGHT } from './chrome/styles';
 import { FurthestPrompt } from './chrome/FurthestPrompt';
 import { InsertPage } from './chrome/InsertPage';
 import { NoticeSlot } from './chrome/NoticeSlot';
@@ -36,12 +37,18 @@ export const Reader = forwardRef<ReaderHandle, ReaderProps>(function Reader(prop
   const {
     bookId, document, themes, positionStore, settingsStore, furthest = null, title, onBack,
     onPositionChange, onChapterChange, onChapterEnd, onBookEnd, onSelection, renderNotice, renderLocked, insertPages,
-    hostComponent, onSheetChange,
+    hostComponent, onSheetChange, insets, onChromeChange, onBrightness,
   } = props;
+  const topInset = insets?.top ?? 0;
+  const bottomInset = insets?.bottom ?? 0;
   const labels: ReaderLabels = useMemo(() => ({ ...DEFAULT_LABELS, ...(props.labels ?? {}) }), [props.labels]);
   const PageHost = hostComponent ?? DefaultPageHost;
   const scheme = useColorScheme();
   const { settings, update: updateSettings, loaded: settingsLoaded } = useReaderSettings(settingsStore);
+  // A host that drives the screen's brightness gets the setting; the page then is never dimmed by the overlay.
+  const pageSettings = useMemo(() => (onBrightness ? { ...settings, brightness: 1 } : settings), [onBrightness, settings]);
+  const onBrightnessRef = useRef(onBrightness); onBrightnessRef.current = onBrightness;
+  useEffect(() => { if (settingsLoaded) onBrightnessRef.current?.(settings.brightness); }, [settings.brightness, settingsLoaded]);
   const { wpm, sample } = useReadingSpeed(settingsStore);
   const { restored, record } = usePosition(bookId, positionStore, onPositionChange);
   const chapterCount = document.chapters.length;
@@ -74,6 +81,11 @@ export const Reader = forwardRef<ReaderHandle, ReaderProps>(function Reader(prop
     if (sheetReported.current) { sheetReported.current = false; onSheetChangeRef.current?.(false); }
   }, []);
 
+  // The status bar follows the chrome (a sheet counts as chrome): hidden while reading, as Kindle does.
+  const onChromeChangeRef = useRef(onChromeChange); onChromeChangeRef.current = onChromeChange;
+  const chromeShown = chrome || sheetOpen;
+  useEffect(() => { onChromeChangeRef.current?.(chromeShown); }, [chromeShown]);
+
   const pending = useRef<Pending>(null);
   const host = useRef<PageHostHandle | null>(null);
   const hostReady = useRef(false);
@@ -103,20 +115,20 @@ export const Reader = forwardRef<ReaderHandle, ReaderProps>(function Reader(prop
   }, [bookId, settingsStore]);
 
   // --- document per chapter (settings applied live, not by rebuilding) ------------------
-  const settingsAtMount = useRef(settings);
+  const settingsAtMount = useRef(pageSettings);
   const themeAtMount = useRef(theme);
   const html = useMemo(() => {
-    settingsAtMount.current = settings;
+    settingsAtMount.current = pageSettings;
     themeAtMount.current = theme;
-    return buildReaderDocument({ bodyHtml: htmlFor(chapterIndex), theme, settings, engineSource: ENGINE_SOURCE });
+    return buildReaderDocument({ bodyHtml: htmlFor(chapterIndex), theme, settings: pageSettings, engineSource: ENGINE_SOURCE });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chapterIndex, htmlFor, started]);
 
   useEffect(() => {
     if (!hostReady.current) return;
-    if (settings === settingsAtMount.current && theme === themeAtMount.current) return;
-    host.current?.send({ cmd: 'setSettings', vars: themeVariables(theme, settings) });
-  }, [settings, theme]);
+    if (pageSettings === settingsAtMount.current && theme === themeAtMount.current) return;
+    host.current?.send({ cmd: 'setSettings', vars: themeVariables(theme, pageSettings) });
+  }, [pageSettings, theme]);
 
   // --- navigation -----------------------------------------------------------------------
   const goChapter = useCallback((index: number, target: Pending) => {
@@ -191,7 +203,7 @@ export const Reader = forwardRef<ReaderHandle, ReaderProps>(function Reader(prop
         pending.current = null;
         if (t?.page !== undefined) host.current?.send({ cmd: 'goTo', page: t.page });
         else if (t?.pct !== undefined) host.current?.send({ cmd: 'goToPct', pct: t.pct });
-        if (settings !== settingsAtMount.current || theme !== themeAtMount.current) host.current?.send({ cmd: 'setSettings', vars: themeVariables(theme, settings) });
+        if (pageSettings !== settingsAtMount.current || theme !== themeAtMount.current) host.current?.send({ cmd: 'setSettings', vars: themeVariables(theme, pageSettings) });
         break;
       }
       case 'page': {
@@ -225,7 +237,7 @@ export const Reader = forwardRef<ReaderHandle, ReaderProps>(function Reader(prop
       default:
         break;
     }
-  }, [crossBack, crossForward, document, onSelection, record, sample, settings, theme, turn]);
+  }, [crossBack, crossForward, document, onSelection, record, sample, pageSettings, theme, turn]);
   const handleMessageRef = useRef(handleMessage);
   handleMessageRef.current = handleMessage;
   const onMessage = useCallback((m: HostMessage) => { handleMessageRef.current(m); }, []);
@@ -258,11 +270,12 @@ export const Reader = forwardRef<ReaderHandle, ReaderProps>(function Reader(prop
   const pagesLeft = Math.max(0, count - page - 1);
   const chapterMinutes = minutesFor(pagesLeft * wordsPerPage, wpm);
   const bookMinutes = minutesFor(pagesLeft * wordsPerPage + (words.total - (words.before[chapterIndex] ?? 0) - (chapter?.wordCount ?? 0)), wpm);
+  // Kindle's footer: time left in the book by default; a tap cycles to the chapter, then the page. Percent stays on the right.
   const footerText = footerMode === 0
-    ? `${page + 1} of ${count} ${labels.inChapter}`
+    ? `${formatDuration(bookMinutes, labels)} ${labels.leftInBook}`
     : footerMode === 1
-      ? `${bookPct}% ${labels.ofBook}`
-      : `${formatDuration(chapterMinutes, labels)} ${labels.leftInChapter} · ${formatDuration(bookMinutes, labels)} ${labels.leftInBook}`;
+      ? `${formatDuration(chapterMinutes, labels)} ${labels.leftInChapter}`
+      : `${page + 1} of ${count} ${labels.inChapter}`;
 
   const describe = useCallback((pct: number) => {
     const t = locate(document, pct);
@@ -290,7 +303,7 @@ export const Reader = forwardRef<ReaderHandle, ReaderProps>(function Reader(prop
   return (
     <View style={[styles.root, { backgroundColor: theme.colors.background }]} testID="reader" accessibilityState={{ expanded: chrome }}>
       {started && !locked ? (
-        <View style={styles.host} testID="reader-host-slot">
+        <View style={[styles.host, { top: topInset, bottom: bottomInset + FOOTER_HEIGHT }]} testID="reader-host-slot">
           <PageHost key={`${bookId}:${chapterIndex}`} html={html} onMessage={onMessage} hostRef={hostRef} onSelection={onSelection} />
         </View>
       ) : null}
@@ -308,16 +321,17 @@ export const Reader = forwardRef<ReaderHandle, ReaderProps>(function Reader(prop
         </InsertPage>
       ) : null}
 
-      {!insert ? <Footer theme={theme} text={footerText} onCycle={() => setFooterMode((m) => ((m + 1) % 3) as FooterMode)} /> : null}
+      {!insert ? <Footer theme={theme} text={footerText} percent={`${bookPct}%`} bottomInset={bottomInset} onCycle={() => setFooterMode((m) => ((m + 1) % 3) as FooterMode)} /> : null}
 
       {chrome && !insert ? (
         <>
-          <TopBar theme={theme} title={title ?? document.title} labels={labels} onBack={onBack} onToc={() => setSheet('toc')} onSettings={() => setSheet('settings')} />
+          <TopBar theme={theme} title={title ?? document.title} labels={labels} onBack={onBack} onToc={() => setSheet('toc')} onSettings={() => setSheet('settings')} topInset={topInset} />
           <NoticeSlot>{renderNotice?.()}</NoticeSlot>
           <BottomBar
             theme={theme}
             bookPct={bookPct}
             describe={describe}
+            bottomInset={bottomInset}
             onJump={(pct) => { const t = locate(document, pct); jumpTo(t.chapterIndex, t.offsetPct, false); }}
             backLabel={backTarget ? `${labels.backTo} ${labels.chapter} ${backTarget.chapterIndex + 1} · ${labels.page} ${backTarget.page + 1}` : null}
             onBack={() => {
@@ -344,10 +358,10 @@ export const Reader = forwardRef<ReaderHandle, ReaderProps>(function Reader(prop
       ) : null}
 
       {sheet === 'toc' ? (
-        <TocSheet theme={theme} document={document} currentIndex={chapterIndex} backMatterLabel={labels.backMatter} onPick={(i) => jumpTo(i, 0)} onClose={() => setSheet(null)} />
+        <TocSheet theme={theme} document={document} currentIndex={chapterIndex} backMatterLabel={labels.backMatter} onPick={(i) => jumpTo(i, 0)} onClose={() => setSheet(null)} bottomInset={bottomInset} />
       ) : null}
       {sheet === 'settings' ? (
-        <SettingsSheet theme={theme} settings={settings} labels={labels} onChange={updateSettings} onClose={() => setSheet(null)} />
+        <SettingsSheet theme={theme} settings={settings} labels={labels} onChange={updateSettings} onClose={() => setSheet(null)} bottomInset={bottomInset} />
       ) : null}
     </View>
   );

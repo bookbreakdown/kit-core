@@ -159,11 +159,19 @@ export function createPageEngine(container, options = {}) {
 
   // --- gestures -------------------------------------------------------------------------
   let touch = null;
+  // A touch browser follows every tap with compatibility mouse events (mousedown/mouseup), so
+  // without this a tap counted twice: a side tap turned two pages and a centre tap opened the
+  // chrome and closed it again (Android WebView, 2026-10-12). Mouse input is ignored for a
+  // moment after any touch.
+  let lastTouchAt = 0;
+  const MOUSE_AFTER_TOUCH_MS = 800;
   function onTouchStart(e) {
+    lastTouchAt = Date.now();
     if (!e.touches || e.touches.length === 0) return;
     touch = { x: e.touches[0].clientX, y: e.touches[0].clientY, t: Date.now() };
   }
   function onTouchEnd(e) {
+    lastTouchAt = Date.now();
     if (!touch || !e.changedTouches || e.changedTouches.length === 0) return;
     const dx = e.changedTouches[0].clientX - touch.x;
     const dy = e.changedTouches[0].clientY - touch.y;
@@ -178,7 +186,10 @@ export function createPageEngine(container, options = {}) {
     }
   }
   let mouse = null;
-  function onMouseDown(e) { mouse = { x: e.clientX, y: e.clientY }; }
+  function onMouseDown(e) {
+    if (Date.now() - lastTouchAt < MOUSE_AFTER_TOUCH_MS) { mouse = null; return; }
+    mouse = { x: e.clientX, y: e.clientY };
+  }
   function onMouseUp(e) {
     if (!mouse) return;
     const dx = e.clientX - mouse.x;

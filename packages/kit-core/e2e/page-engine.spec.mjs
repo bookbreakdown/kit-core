@@ -66,6 +66,20 @@ await page.evaluate(({ x, y }) => {
 }, { x: box.x, y: box.y + box.height / 2 });
 assert(await page.evaluate(() => window.engine.page) === 3, 'swipe left → next page');
 
+// A touch tap followed by the browser's compatibility mouse events counts once (Android WebView
+// sent both, so one side tap turned two pages and a centre tap toggled the chrome twice).
+await page.evaluate(() => window.engine.goTo(1));
+await page.evaluate(({ x, y }) => {
+  const el = document.getElementById('container');
+  const t = new Touch({ identifier: 1, target: el, clientX: x, clientY: y });
+  el.dispatchEvent(new TouchEvent('touchstart', { touches: [t], changedTouches: [t], bubbles: true }));
+  el.dispatchEvent(new TouchEvent('touchend', { touches: [], changedTouches: [t], bubbles: true }));
+  el.dispatchEvent(new MouseEvent('mousedown', { clientX: x, clientY: y, bubbles: true }));
+  el.dispatchEvent(new MouseEvent('mouseup', { clientX: x, clientY: y, bubbles: true }));
+}, { x: box.x + box.width * 0.9, y: box.y + box.height / 2 });
+assert(await page.evaluate(() => window.engine.page) === 2, 'touch tap + compatibility mouse events → one page, not two');
+await page.waitForTimeout(900);
+
 // Keyboard, from a middle page (the swipe above may have landed on the last page).
 await page.evaluate(() => document.activeElement && document.activeElement.blur());
 await page.evaluate(() => window.engine.goTo(1));

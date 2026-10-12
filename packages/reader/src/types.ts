@@ -39,7 +39,9 @@ export interface ReaderLabels {
   about: string;
   lessThanAMinute: string;
   hourShort: string;
+  hoursShort: string;
   minuteShort: string;
+  minutesShort: string;
   chapter: string;
   page: string;
   backTo: string;
@@ -82,6 +84,15 @@ export interface ReaderProps {
   insertPages?(chapterIndex: number): ReactNode[];
   /** Test and host override of the page host (iframe on web, WebView on native by default). */
   hostComponent?: PageHostComponent;
+  /** Areas the device covers (status bar, cutout, gesture bar), from the host's safe-area source. Default 0. */
+  insets?: { top: number; bottom: number };
+  /** The tap chrome was shown (true) or hidden (false): a host shows the status bar only with the chrome, as Kindle does. */
+  onChromeChange?(visible: boolean): void;
+  /**
+   * The host drives the real screen brightness. When given, the brightness setting is passed here (on open and on
+   * every change) instead of dimming the page with an overlay.
+   */
+  onBrightness?(level: number): void;
 }
 
 export interface ReaderHandle {
