@@ -40,7 +40,7 @@ function Seek({ theme }: { theme: Theme }) {
 }
 
 /** The full player: artwork, title, seek, ±15, prev/next, speed, sleep timer, chapters, voices. */
-export function FullPlayerSheet({ theme }: { theme: Theme }) {
+export function FullPlayerSheet({ theme, insets }: { theme: Theme; insets?: { top: number; bottom: number } }) {
   const p = usePlayer();
   const [panel, setPanel] = useState<null | 'chapters' | 'sleep' | 'voices'>(null);
   const [now, setNow] = useState(Date.now());
@@ -53,7 +53,7 @@ export function FullPlayerSheet({ theme }: { theme: Theme }) {
   const sleepLabel = p.sleepTimer.setting === null ? 'Sleep' : p.sleepTimer.setting === 'end-of-chapter' ? 'End of chapter' : formatClock(Math.max(0, Math.round(((p.sleepTimer.endsAt ?? now) - now) / 1000)));
   return (
     <View style={[StyleSheet.absoluteFill, { backgroundColor: c.background }]} testID="full-player">
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView contentContainerStyle={[styles.content, { paddingTop: 20 + (insets?.top ?? 0), paddingBottom: 20 + (insets?.bottom ?? 0) }]}>
         <View style={styles.top}>
           <Pressable onPress={() => p.setExpanded(false)} testID="player-collapse" accessibilityRole="button" style={styles.iconButton}><Text style={[styles.icon, { color: c.text }]}>⌄</Text></Pressable>
           <Text numberOfLines={1} style={[styles.book, { color: c.muted }]}>{p.playlist.title}</Text>
