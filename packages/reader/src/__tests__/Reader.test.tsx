@@ -86,6 +86,15 @@ test('insets keep the page, footer and bars clear of the status and gesture bars
   expect(getByTestId('reader-topbar').props.style).toEqual(expect.arrayContaining([expect.objectContaining({ paddingTop: 40 })]));
 });
 
+test('host actions appear in the top bar and fire', async () => {
+  const onPress = jest.fn();
+  const { getByTestId } = mount({ topActions: [{ key: 'library', label: 'Add to Library', onPress }] });
+  await ready();
+  msg({ type: 'tap', zone: 'center' });
+  fireEvent.press(getByTestId('reader-action-library'));
+  expect(onPress).toHaveBeenCalled();
+});
+
 test('a host that drives screen brightness gets the setting and the page is never dimmed', async () => {
   const onBrightness = jest.fn();
   const settings = memorySettings();

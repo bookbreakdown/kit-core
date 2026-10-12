@@ -93,6 +93,16 @@ export interface ReaderProps {
    * every change) instead of dimming the page with an overlay.
    */
   onBrightness?(level: number): void;
+  /** Host actions shown in the tap chrome's top bar, before Contents (e.g. "Add to Library"). */
+  topActions?: ReaderAction[];
+}
+
+export interface ReaderAction {
+  key: string;
+  label: string;
+  onPress(): void;
+  /** Drawn emphasised (e.g. the book is already in the library). */
+  active?: boolean;
 }
 
 export interface ReaderHandle {

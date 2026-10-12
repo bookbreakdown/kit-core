@@ -1,6 +1,6 @@
 export const PACKAGE = { name: '@libraryofages/reader', version: '0.0.2' } as const;
 export { Reader, furthestDismissedKey } from './Reader';
-export type { ReaderProps, ReaderSettings, ReaderHandle, ReaderThemes, ReaderLabels, SettingsStore } from './types';
+export type { ReaderProps, ReaderSettings, ReaderHandle, ReaderAction, ReaderThemes, ReaderLabels, SettingsStore } from './types';
 export { useReaderSettings, DEFAULT_SETTINGS, SETTINGS_KEY, clampSettings } from './useReaderSettings';
 export { useReadingSpeed, DEFAULT_WPM, WPM_KEY } from './useReadingSpeed';
 export { usePosition } from './usePosition';

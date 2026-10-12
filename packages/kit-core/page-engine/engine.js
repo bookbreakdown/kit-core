@@ -17,6 +17,8 @@ export function createPageEngine(container, options = {}) {
     swipe: true,
     keyboard: true,
     resizeDebounceMs: 300,
+    // Page-turn slide in ms (Kindle-style: the page follows the finger, then slides). 0 = instant.
+    animateMs: 0,
     ...options,
   };
 
@@ -36,8 +38,19 @@ export function createPageEngine(container, options = {}) {
     column.style.height = '100%';
   }
 
-  function applyTransform() {
+  // Only a page turn (or the snap back after a short drag) animates; layout, jumps and relayouts are instant.
+  function applyTransform(animate = false) {
+    column.style.transition = animate && opts.animateMs > 0 ? `transform ${opts.animateMs}ms ease-out` : 'none';
     column.style.transform = width > 0 ? `translateX(-${page * width}px)` : 'none';
+  }
+
+  // While a finger drags, the page follows it; past the first or last page it moves a third as far (a pull, not a turn).
+  function dragTo(dx) {
+    if (!(width > 0) || opts.animateMs <= 0) return;
+    const atEdge = (dx > 0 && page === 0) || (dx < 0 && page === count - 1);
+    const offset = atEdge ? dx / 3 : dx;
+    column.style.transition = 'none';
+    column.style.transform = `translateX(${-page * width + offset}px)`;
   }
 
   function measure() {
@@ -73,24 +86,24 @@ export function createPageEngine(container, options = {}) {
     emit();
   }
 
-  function goTo(n) {
+  function goTo(n, animate = false) {
     const target = Math.max(0, Math.min(count - 1, Math.floor(n)));
     if (target === page) return false;
     page = target;
-    applyTransform();
+    applyTransform(animate);
     emit();
     return true;
   }
 
   function next() {
-    const moved = goTo(page + 1);
-    if (!moved) opts.onEdge('next');
+    const moved = goTo(page + 1, true);
+    if (!moved) { applyTransform(true); opts.onEdge('next'); }
     return moved;
   }
 
   function prev() {
-    const moved = goTo(page - 1);
-    if (!moved) opts.onEdge('prev');
+    const moved = goTo(page - 1, true);
+    if (!moved) { applyTransform(true); opts.onEdge('prev'); }
     return moved;
   }
 
@@ -168,7 +181,14 @@ export function createPageEngine(container, options = {}) {
   function onTouchStart(e) {
     lastTouchAt = Date.now();
     if (!e.touches || e.touches.length === 0) return;
-    touch = { x: e.touches[0].clientX, y: e.touches[0].clientY, t: Date.now() };
+    touch = { x: e.touches[0].clientX, y: e.touches[0].clientY, t: Date.now(), dragging: false };
+  }
+  function onTouchMove(e) {
+    if (!touch || !opts.swipe || !e.touches || e.touches.length === 0) return;
+    const dx = e.touches[0].clientX - touch.x;
+    const dy = e.touches[0].clientY - touch.y;
+    if (!touch.dragging && Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy)) touch.dragging = true;
+    if (touch.dragging) dragTo(dx);
   }
   function onTouchEnd(e) {
     lastTouchAt = Date.now();
@@ -176,11 +196,13 @@ export function createPageEngine(container, options = {}) {
     const dx = e.changedTouches[0].clientX - touch.x;
     const dy = e.changedTouches[0].clientY - touch.y;
     const startX = touch.x;
+    const dragged = touch.dragging;
     touch = null;
     if (opts.swipe && Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) {
       if (dx < 0) next(); else prev();
       return;
     }
+    if (dragged) { applyTransform(true); return; }
     if (opts.tapZones && Math.abs(dx) < 10 && Math.abs(dy) < 10) {
       tapAt(startX);
     }
@@ -213,6 +235,7 @@ export function createPageEngine(container, options = {}) {
   }
 
   container.addEventListener('touchstart', onTouchStart, { passive: true });
+  container.addEventListener('touchmove', onTouchMove, { passive: true });
   container.addEventListener('touchend', onTouchEnd, { passive: true });
   container.addEventListener('mousedown', onMouseDown);
   container.addEventListener('mouseup', onMouseUp);
@@ -230,6 +253,7 @@ export function createPageEngine(container, options = {}) {
   function destroy() {
     destroyed = true;
     container.removeEventListener('touchstart', onTouchStart);
+    container.removeEventListener('touchmove', onTouchMove);
     container.removeEventListener('touchend', onTouchEnd);
     container.removeEventListener('mousedown', onMouseDown);
     container.removeEventListener('mouseup', onMouseUp);

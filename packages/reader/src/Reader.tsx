@@ -37,7 +37,7 @@ export const Reader = forwardRef<ReaderHandle, ReaderProps>(function Reader(prop
   const {
     bookId, document, themes, positionStore, settingsStore, furthest = null, title, onBack,
     onPositionChange, onChapterChange, onChapterEnd, onBookEnd, onSelection, renderNotice, renderLocked, insertPages,
-    hostComponent, onSheetChange, insets, onChromeChange, onBrightness,
+    hostComponent, onSheetChange, insets, onChromeChange, onBrightness, topActions,
   } = props;
   const topInset = insets?.top ?? 0;
   const bottomInset = insets?.bottom ?? 0;
@@ -325,7 +325,7 @@ export const Reader = forwardRef<ReaderHandle, ReaderProps>(function Reader(prop
 
       {chrome && !insert ? (
         <>
-          <TopBar theme={theme} title={title ?? document.title} labels={labels} onBack={onBack} onToc={() => setSheet('toc')} onSettings={() => setSheet('settings')} topInset={topInset} />
+          <TopBar theme={theme} title={title ?? document.title} labels={labels} onBack={onBack} onToc={() => setSheet('toc')} onSettings={() => setSheet('settings')} topInset={topInset} actions={topActions} />
           <NoticeSlot>{renderNotice?.()}</NoticeSlot>
           <BottomBar
             theme={theme}

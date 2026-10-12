@@ -92,6 +92,7 @@ try {
     onTap: (zone) => post({ type: 'tap', zone }),
     onEdge: (direction) => post({ type: 'edge', direction }),
     keyboard: false,
+    animateMs: 260,
   });
   window.addEventListener('keydown', (e) => {
     if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') { e.preventDefault(); post({ type: 'key', key: e.key }); }

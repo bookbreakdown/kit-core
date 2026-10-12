@@ -9,13 +9,15 @@ export interface PageEngineOptions {
   swipe?: boolean;
   keyboard?: boolean;
   resizeDebounceMs?: number;
+  /** Page-turn slide in ms; the page also follows a dragging finger. 0 (default) = instant. */
+  animateMs?: number;
 }
 
 export interface PageEngine {
   layout(): void;
   next(): boolean;
   prev(): boolean;
-  goTo(page: number): boolean;
+  goTo(page: number, animate?: boolean): boolean;
   goToPct(pct: number): void;
   relayoutKeepingPosition(): void;
   offsetPct(): number;
