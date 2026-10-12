@@ -5,5 +5,5 @@ export { FullPlayerSheet } from './ui/FullPlayerSheet';
 export { ChapterList } from './ui/ChapterList';
 export { createEngine, registerPlaybackService, HtmlAudioEngine } from './engine';
 export type { AudioEngine, EngineState, EngineEvents, EngineEventName, RemoteCommand, MediaLike } from './engine';
-export { SPEEDS, JUMP_SECONDS, SAVE_INTERVAL_MS, FADE_MS } from './types';
-export type { PlayerApi, PlayerProviderProps, PlayerState, PlayerContextValue, SleepTimerSetting, SleepTimerState, Voice } from './types';
+export { SPEEDS, JUMP_SECONDS, SAVE_INTERVAL_MS, FADE_MS, MINI_PLAYER_HEIGHT } from './types';
+export type { PlayerPanel, PlayerApi, PlayerProviderProps, PlayerState, PlayerContextValue, SleepTimerSetting, SleepTimerState, Voice } from './types';

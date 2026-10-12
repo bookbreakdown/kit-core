@@ -2,8 +2,9 @@ import { useEffect, useState } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, View, type GestureResponderEvent, type LayoutChangeEvent } from 'react-native';
 import { formatClock, type Theme } from '@libraryofages/kit-core';
 import { usePlayer } from '../PlayerProvider';
-import { JUMP_SECONDS, SPEEDS } from '../types';
+import { JUMP_SECONDS, SPEEDS, type PlayerPanel } from '../types';
 import { ChapterList } from './ChapterList';
+import { ChevronDownGlyph, CloseGlyph, PauseGlyph, PlayGlyph, SkipGlyph } from './Glyphs';
 
 const SLEEP_OPTIONS: Array<{ label: string; value: number | 'end-of-chapter' | null }> = [
   { label: '15 min', value: 15 }, { label: '30 min', value: 30 }, { label: '45 min', value: 45 }, { label: '60 min', value: 60 }, { label: 'End of chapter', value: 'end-of-chapter' }, { label: 'Off', value: null },
@@ -42,11 +43,11 @@ function Seek({ theme }: { theme: Theme }) {
 /** The full player: artwork, title, seek, ±15, prev/next, speed, sleep timer, chapters, voices. */
 export function FullPlayerSheet({ theme, insets }: { theme: Theme; insets?: { top: number; bottom: number } }) {
   const p = usePlayer();
-  const [panel, setPanel] = useState<null | 'chapters' | 'sleep' | 'voices'>(null);
+  const [panel, setPanel] = useState<PlayerPanel | null>(null);
   const [now, setNow] = useState(Date.now());
   useEffect(() => { const id = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(id); }, []);
   // A panel left open (e.g. after a refused chapter) must not survive a collapse.
-  useEffect(() => { if (!p.expanded) setPanel(null); }, [p.expanded]);
+  useEffect(() => { setPanel(p.expanded ? p.openPanel : null); }, [p.expanded, p.openPanel]);
   if (!p.playlist || !p.expanded) return null;
   const track = p.playlist.tracks[p.index];
   const c = theme.colors;
@@ -55,20 +56,20 @@ export function FullPlayerSheet({ theme, insets }: { theme: Theme; insets?: { to
     <View style={[StyleSheet.absoluteFill, { backgroundColor: c.background }]} testID="full-player">
       <ScrollView contentContainerStyle={[styles.content, { paddingTop: 20 + (insets?.top ?? 0), paddingBottom: 20 + (insets?.bottom ?? 0) }]}>
         <View style={styles.top}>
-          <Pressable onPress={() => p.setExpanded(false)} testID="player-collapse" accessibilityRole="button" style={styles.iconButton}><Text style={[styles.icon, { color: c.text }]}>⌄</Text></Pressable>
+          <Pressable onPress={() => p.setExpanded(false)} testID="player-collapse" accessibilityRole="button" accessibilityLabel="Minimise player" style={styles.iconButton}><ChevronDownGlyph size={26} color={c.text} /></Pressable>
           <Text numberOfLines={1} style={[styles.book, { color: c.muted }]}>{p.playlist.title}</Text>
-          <Pressable onPress={() => void p.close()} testID="player-close" accessibilityRole="button" style={styles.iconButton}><Text style={[styles.icon, { color: c.text }]}>✕</Text></Pressable>
+          <Pressable onPress={() => void p.close()} testID="player-close" accessibilityRole="button" accessibilityLabel="Stop and close player" style={styles.iconButton}><CloseGlyph size={20} color={c.text} /></Pressable>
         </View>
         {track?.artworkUrl ? <Image source={{ uri: track.artworkUrl }} style={styles.art} /> : <View style={[styles.art, { backgroundColor: c.surface }]} />}
         <Text numberOfLines={2} style={[styles.title, { color: c.text }]} testID="player-title">{track?.title ?? ''}</Text>
         {p.blockedIndex !== null ? <Text style={[styles.blocked, { color: c.accent }]} testID="player-blocked">This chapter is not available</Text> : null}
         <Seek theme={theme} />
         <View style={styles.controls}>
-          <Pressable onPress={p.skipPrev} testID="player-prev" accessibilityRole="button" style={styles.iconButton}><Text style={[styles.icon, { color: c.text }]}>⏮</Text></Pressable>
+          <Pressable onPress={p.skipPrev} testID="player-prev" accessibilityRole="button" accessibilityLabel="Previous chapter" style={styles.iconButton}><SkipGlyph size={22} color={c.text} direction="prev" /></Pressable>
           <Pressable onPress={() => p.jump(-JUMP_SECONDS)} testID="player-back15" accessibilityRole="button" style={styles.iconButton}><Text style={[styles.small, { color: c.text }]}>−15</Text></Pressable>
-          <Pressable onPress={p.toggle} testID="player-toggle" accessibilityRole="button" accessibilityState={{ selected: p.playing }} style={[styles.play, { backgroundColor: c.accent }]}><Text style={[styles.playIcon, { color: c.background }]}>{p.playing ? '❚❚' : '▶'}</Text></Pressable>
+          <Pressable onPress={p.toggle} testID="player-toggle" accessibilityRole="button" accessibilityState={{ selected: p.playing }} style={[styles.play, { backgroundColor: c.accent }]}>{p.playing ? <PauseGlyph size={26} color={c.background} /> : <PlayGlyph size={26} color={c.background} />}</Pressable>
           <Pressable onPress={() => p.jump(JUMP_SECONDS)} testID="player-fwd15" accessibilityRole="button" style={styles.iconButton}><Text style={[styles.small, { color: c.text }]}>+15</Text></Pressable>
-          <Pressable onPress={p.skipNext} testID="player-next" accessibilityRole="button" style={styles.iconButton}><Text style={[styles.icon, { color: c.text }]}>⏭</Text></Pressable>
+          <Pressable onPress={p.skipNext} testID="player-next" accessibilityRole="button" accessibilityLabel="Next chapter" style={styles.iconButton}><SkipGlyph size={22} color={c.text} direction="next" /></Pressable>
         </View>
         <View style={styles.secondary}>
           <Pressable onPress={p.cycleRate} testID="player-speed" accessibilityRole="button" style={[styles.chip, { borderColor: c.border }]}><Text style={{ color: c.text, fontWeight: '600' }}>{p.rate}×</Text></Pressable>
@@ -114,10 +115,8 @@ const styles = StyleSheet.create({
   time: { fontSize: 12 },
   controls: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
   iconButton: { width: 48, height: 48, alignItems: 'center', justifyContent: 'center' },
-  icon: { fontSize: 24 },
   small: { fontSize: 14, fontWeight: '600' },
   play: { width: 72, height: 72, borderRadius: 36, alignItems: 'center', justifyContent: 'center' },
-  playIcon: { fontSize: 26 },
   secondary: { flexDirection: 'row', justifyContent: 'center', gap: 8, flexWrap: 'wrap' },
   chip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 16, borderWidth: 1 },
   panel: { marginTop: 4 },

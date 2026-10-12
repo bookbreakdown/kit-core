@@ -3,13 +3,13 @@ import { AppState, type AppStateStatus } from 'react-native';
 import type { ListeningPosition, Playlist, Track } from '@libraryofages/kit-core';
 import type { AudioEngine, RemoteCommand } from './engine/AudioEngine';
 import { createEngine } from './engine/createEngine';
-import { FADE_MS, JUMP_SECONDS, SAVE_INTERVAL_MS, SPEEDS, type PlayerApi, type PlayerContextValue, type PlayerProviderProps, type PlayerState, type SleepTimerSetting } from './types';
+import { FADE_MS, JUMP_SECONDS, SAVE_INTERVAL_MS, SPEEDS, type PlayerApi, type PlayerContextValue, type PlayerPanel, type PlayerProviderProps, type PlayerState, type SleepTimerSetting } from './types';
 
 const PlayerContext = createContext<PlayerContextValue | null>(null);
 
 const INITIAL: PlayerState = {
   playlist: null, index: 0, positionSeconds: 0, durationSeconds: 0, playing: false, rate: 1,
-  sleepTimer: { setting: null, endsAt: null }, blockedIndex: null, loaded: false, expanded: false, fading: false,
+  sleepTimer: { setting: null, endsAt: null }, blockedIndex: null, loaded: false, expanded: false, openPanel: null, fading: false,
 };
 
 /**
@@ -221,7 +221,7 @@ export function PlayerProvider(props: PlayerProviderProps) {
   }, [load, play]);
 
   const switchVoice = useCallback((id: string) => { cbs.current.onSwitchVoice?.(id); }, []);
-  const setExpanded = useCallback((expanded: boolean) => setState((s) => ({ ...s, expanded })), []);
+  const setExpanded = useCallback((expanded: boolean, panel?: PlayerPanel) => setState((s) => ({ ...s, expanded, openPanel: expanded ? panel ?? null : null })), []);
   const close = useCallback(async () => {
     save();
     await getEngine().pause();

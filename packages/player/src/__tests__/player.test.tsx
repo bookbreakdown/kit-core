@@ -177,3 +177,39 @@ test('the mini player shows the track and toggles playback', async () => {
   expect(engine.st.index).toBe(1);
   expect(engine.st.positionSeconds).toBe(0);
 });
+
+test('the reader strip (listeningControls) cycles speed and opens the full player on its chapter list', async () => {
+  const engine = new FakeEngine();
+  const { getByTestId, queryByTestId } = render(
+    <PlayerProvider theme={theme} progressStore={memoryStore()} engineFactory={() => engine}>
+      <Grab />
+      <MiniPlayer theme={theme} listeningControls />
+      <FullPlayerSheet theme={theme} />
+    </PlayerProvider>,
+  );
+  await settle();
+  await act(async () => { await api!.load(playlist); });
+  await waitFor(() => expect(getByTestId('mini-speed')).toBeTruthy());
+  fireEvent.press(getByTestId('mini-speed'));
+  await settle();
+  expect(api!.rate).not.toBe(1);
+  fireEvent.press(getByTestId('mini-chapters'));
+  await waitFor(() => expect(getByTestId('full-player')).toBeTruthy());
+  expect(getByTestId('chapter-0')).toBeTruthy();
+  // collapsing and reopening from the strip's title opens the player without the panel
+  fireEvent.press(getByTestId('player-collapse'));
+  await settle();
+  fireEvent.press(getByTestId('mini-expand'));
+  await waitFor(() => expect(getByTestId('full-player')).toBeTruthy());
+  expect(queryByTestId('chapter-0')).toBeNull();
+});
+
+test('the tab-bar strip has no speed or chapters buttons', async () => {
+  const engine = new FakeEngine();
+  const { getByTestId, queryByTestId } = mount(engine);
+  await settle();
+  await act(async () => { await api!.load(playlist); });
+  await waitFor(() => expect(getByTestId('mini-player')).toBeTruthy());
+  expect(queryByTestId('mini-speed')).toBeNull();
+  expect(queryByTestId('mini-chapters')).toBeNull();
+});

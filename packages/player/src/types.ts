@@ -4,6 +4,9 @@ import type { AudioEngine } from './engine/AudioEngine';
 
 export const SPEEDS = [0.5, 0.75, 1, 1.25, 1.5, 2] as const;
 export const JUMP_SECONDS = 15;
+export type PlayerPanel = 'chapters' | 'sleep' | 'voices';
+/** The mini player's height (progress line + row), for layouts that reserve room for it. */
+export const MINI_PLAYER_HEIGHT = 62;
 export const SAVE_INTERVAL_MS = 5000;
 export const FADE_MS = 5000;
 
@@ -45,6 +48,8 @@ export interface PlayerState {
   blockedIndex: number | null;
   loaded: boolean;
   expanded: boolean;
+  /** The full player's panel to show when it opens (e.g. the reader's Chapters button). */
+  openPanel: PlayerPanel | null;
   fading: boolean;
 }
 
@@ -62,7 +67,7 @@ export interface PlayerApi {
   goTo(index: number): void;
   setSleepTimer(setting: SleepTimerSetting): void;
   switchPlaylist(playlist: Playlist): Promise<void>;
-  setExpanded(expanded: boolean): void;
+  setExpanded(expanded: boolean, panel?: PlayerPanel): void;
   close(): Promise<void>;
   currentTrack(): Track | null;
 }
