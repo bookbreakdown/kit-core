@@ -35,7 +35,7 @@ work. Without this prop the prior engine error behavior and state shape are unch
 | Field | Meaning |
 |---|---|
 | `id`, `title` | Book id and title. |
-| `content` | `{ url, byteSize, sha256, wordCount }` for the Markdown text. `sha256` is `string \| null`: null when the server could not hash the object; `byteSize` still verifies. |
+| `content` | `{ url, byteSize, sha256, wordCount }` for the Markdown text, or `null` for an audio-only title. `sha256` is `string \| null`: null when the server could not hash the object; `byteSize` still verifies. |
 | `cover` | `{ url, byteSize, sha256 \| null }` or null. |
 | `voices[]` | `{ voice, label, chapters[] }`; each chapter `{ chapterNumber, title, url, byteSize, sha256 \| null, durationSeconds, backMatter }`. Only voices and chapters the caller may download are present. |
 | `gated` | True when any part of this bundle needs an entitlement (subscription or catalogue ownership). |
