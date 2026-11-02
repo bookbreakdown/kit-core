@@ -17,7 +17,7 @@ bodies.set('cdn://ch1.mp3', bytesOf(5, 300_000));
 bodies.set('cdn://ch2.mp3', bytesOf(7, 300_000));
 bodies.set('cdn://ch3.mp3', bytesOf(9, 300_000));
 
-const manifest = (): BundleManifest => ({
+const manifest = (): BundleManifest & { content: NonNullable<BundleManifest['content']> } => ({
   id: 'book', title: 'Book',
   content: { url: 'cdn://text.md', byteSize: bodies.get('cdn://text.md')!.length, sha256: sha(bodies.get('cdn://text.md')!), wordCount: 2001 },
   cover: null,
@@ -130,6 +130,25 @@ test('a size mismatch fails with a reason and keeps no bytes; retry re-queues', 
   expect(await storage.exists('text:book:content')).toBe(false);
   await act(async () => { await api!.retry('text:book'); });
   await until(() => stateOf('text:book') === 'failed');
+});
+
+test('audio-only manifest downloads only chapters, plays a local chapter offline and refuses a text download', async () => {
+  const audioOnly: BundleManifest = { ...manifest(), content: null };
+  const { connectivity } = mount(okPolicy, new FakeConnectivity(), undefined, async () => audioOnly);
+  await until(() => !!api?.ready);
+  await act(async () => { await api!.downloadAudio('book', 'v'); });
+  await until(() => stateOf('audio:book:v') === 'ready');
+  expect(fetched).toEqual(['cdn://ch1.mp3', 'cdn://ch2.mp3', 'cdn://ch3.mp3']);
+  expect(api!.items()).toHaveLength(1);
+  expect(api!.items()[0]).toMatchObject({ kind: 'audio', fileCount: 3, doneCount: 3 });
+  await act(async () => { connectivity.set({ online: false, type: 'none' }); });
+  const calls = fetched.length;
+  expect(await api!.resolveLocal({ kind: 'url', url: 'cdn://ch2.mp3' })).toEqual({ kind: 'url', url: 'blob:x' });
+  expect(fetched).toHaveLength(calls);
+  expect(await api!.readText('book')).toBeNull();
+  await expect(api!.downloadText('book')).rejects.toThrow('This title is an audiobook');
+  expect(api!.items()).toHaveLength(1);
+  expect(await api!.checkForUpdates('audio:book:v')).toBe(false);
 });
 
 test('policy verdicts lock and unlock; checkForUpdates flags a changed manifest; remove empties storage', async () => {

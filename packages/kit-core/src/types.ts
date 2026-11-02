@@ -83,7 +83,8 @@ export interface ManifestVoice {
 export interface BundleManifest {
   id: string;
   title: string;
-  content: ManifestFile & { wordCount: number };
+  /** Null for an audiobook-only title: no readable body or synthetic text bundle exists. */
+  content: (ManifestFile & { wordCount: number }) | null;
   cover: ManifestFile | null;
   voices: ManifestVoice[];
   gated: boolean;

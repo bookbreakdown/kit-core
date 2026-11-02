@@ -97,3 +97,7 @@ the same anchor so a stepper does not drift.
 Integrity: byte size is always checked against the manifest; sha256 when the manifest carries one
 and the platform hashed the file (web ≤ 64 MB, Android ≤ 16 MB). A mismatch deletes the file and
 marks the item `failed` with the reason.
+
+### Audio-only download manifests (gate 2)
+
+`BundleManifest.content` may be `null` for an audiobook-only title. Audio downloads enqueue only the selected voice’s chapter files; their identity, hashing, local resolution and validity rules are unchanged. `downloadText()` rejects a null-content manifest with a readable audiobook-only explanation before creating a download record. The host must offer no Read action for these titles; it must never invent an empty text URL or body. Existing nonnull manifests retain their download behavior.

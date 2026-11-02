@@ -14,7 +14,7 @@ const SETTINGS_KEY = 'settings';
 const DEFAULT_SETTINGS: DownloadsSettings = { wifiOnly: true, autoDownloadNext: false };
 
 function manifestHash(m: BundleManifest): string {
-  const parts = [m.content.url, m.content.byteSize, m.content.sha256 ?? '', m.cover?.byteSize ?? '', m.cover?.sha256 ?? ''];
+  const parts = [m.content?.url ?? '', m.content?.byteSize ?? '', m.content?.sha256 ?? '', m.cover?.byteSize ?? '', m.cover?.sha256 ?? ''];
   for (const v of m.voices) for (const c of v.chapters) parts.push(v.voice, c.chapterNumber, c.byteSize, c.sha256 ?? '');
   return parts.join('|');
 }
@@ -22,6 +22,7 @@ function manifestHash(m: BundleManifest): string {
 function filesFor(kind: DownloadKind, recordKey: string, m: BundleManifest, voice: string | null): DownloadFile[] {
   const mk = (name: string, f: ManifestFile, label: string): DownloadFile => ({ key: fileKey(recordKey, name), url: f.url, bytes: f.byteSize, sha256: f.sha256, done: false, label });
   if (kind === 'text') {
+    if (m.content === null) throw new Error('This title is an audiobook. There is no text to download.');
     const out = [mk('content', m.content, 'Text')];
     if (m.cover) out.push(mk('cover', m.cover, 'Cover'));
     return out;
