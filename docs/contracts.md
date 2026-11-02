@@ -38,7 +38,7 @@ work. Without this prop the prior engine error behavior and state shape are unch
 | `content` | `{ url, byteSize, sha256, wordCount }` for the Markdown text. `sha256` is `string \| null`: null when the server could not hash the object; `byteSize` still verifies. |
 | `cover` | `{ url, byteSize, sha256 \| null }` or null. |
 | `voices[]` | `{ voice, label, chapters[] }`; each chapter `{ chapterNumber, title, url, byteSize, sha256 \| null, durationSeconds, backMatter }`. Only voices and chapters the caller may download are present. |
-| `gated` | True when any part of this bundle is supporter-only. |
+| `gated` | True when any part of this bundle needs an entitlement (subscription or catalogue ownership). |
 | `offlineValidUntil` | ISO instant after which gated content needs an online check, or null when it never expires. |
 | `finishChapterIndex` | As in BookDocument. |
 
