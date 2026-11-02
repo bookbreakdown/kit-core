@@ -241,6 +241,13 @@ export function DownloadsProvider(props: DownloadsProviderProps) {
     return source;
   }, [storage]);
 
+  const resolveAudioSource = useCallback(async (id: string, voice: string, chapterNumber: number): Promise<TrackSource | null> => {
+    const key = audioKey(id, voice);
+    const file = records.current.get(key)?.files.find((f) => f.key === fileKey(key, `ch${chapterNumber}`) && f.done);
+    if (!file) return null;
+    try { return await storage.localSource(file.key); } catch { return null; }
+  }, [storage]);
+
   const readText = useCallback(async (id: string): Promise<string | null> => {
     const r = records.current.get(textKey(id));
     const f = r?.files.find((x) => x.key.endsWith(':content') && x.done);
@@ -278,7 +285,7 @@ export function DownloadsProvider(props: DownloadsProviderProps) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const list = useMemo(() => items(), [items, tick, connection, settings]);
 
-  const api: DownloadsApi = useMemo(() => ({ downloadText, downloadAudio, pause, resume, cancel, retry, remove, deleteAll, resolveLocal, readText, refreshValidity, checkForUpdates, setOfflineValidUntil, setSettings, items, totals }), [cancel, checkForUpdates, deleteAll, downloadAudio, downloadText, items, pause, readText, refreshValidity, remove, resolveLocal, resume, retry, setOfflineValidUntil, setSettings, totals]);
+  const api: DownloadsApi = useMemo(() => ({ downloadText, downloadAudio, pause, resume, cancel, retry, remove, deleteAll, resolveLocal, resolveAudioSource, readText, refreshValidity, checkForUpdates, setOfflineValidUntil, setSettings, items, totals }), [cancel, checkForUpdates, deleteAll, downloadAudio, downloadText, items, pause, readText, refreshValidity, remove, resolveLocal, resolveAudioSource, resume, retry, setOfflineValidUntil, setSettings, totals]);
   const value = useMemo<DownloadsContextValue>(() => ({ ...api, list, settings, ready, usedBytes, freeBytes, connection }), [api, connection, freeBytes, list, ready, settings, usedBytes]);
 
   return <DownloadsContext.Provider value={value}>{children}</DownloadsContext.Provider>;

@@ -101,3 +101,5 @@ marks the item `failed` with the reason.
 ### Audio-only download manifests (gate 2)
 
 `BundleManifest.content` may be `null` for an audiobook-only title. Audio downloads enqueue only the selected voice’s chapter files; their identity, hashing, local resolution and validity rules are unchanged. `downloadText()` rejects a null-content manifest with a readable audiobook-only explanation before creating a download record. The host must offer no Read action for these titles; it must never invent an empty text URL or body. Existing nonnull manifests retain their download behavior.
+
+`DownloadsApi.resolveAudioSource(id, voice, chapterNumber)` resolves a completed chapter by its stable manifest identity, returning a local source or null. Hosts use it before URL matching so URL rotation never turns a downloaded chapter back into a network stream.

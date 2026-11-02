@@ -118,6 +118,8 @@ test('audio: chapters complete in order with at most 2 transfers in flight; canc
   expect(maxInFlight).toBeLessThanOrEqual(2);
   expect(api!.items().find((i) => i.key === 'audio:book:v')).toMatchObject({ progress: 1, doneCount: 3, byteSize: 900_000 });
   expect(await api!.resolveLocal({ kind: 'url', url: 'cdn://ch2.mp3' })).toEqual({ kind: 'url', url: 'blob:x' });
+  expect(await api!.resolveAudioSource('book', 'v', 2)).toEqual({ kind: 'url', url: 'blob:x' });
+  expect(await api!.resolveAudioSource('book', 'v', 99)).toBeNull();
 }, 20000);
 
 test('a size mismatch fails with a reason and keeps no bytes; retry re-queues', async () => {
