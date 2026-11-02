@@ -63,6 +63,7 @@ export function FullPlayerSheet({ theme, insets }: { theme: Theme; insets?: { to
         {track?.artworkUrl ? <Image source={{ uri: track.artworkUrl }} style={styles.art} /> : <View style={[styles.art, { backgroundColor: c.surface }]} />}
         <Text numberOfLines={2} style={[styles.title, { color: c.text }]} testID="player-title">{track?.title ?? ''}</Text>
         {p.blockedIndex !== null ? <Text style={[styles.blocked, { color: c.accent }]} testID="player-blocked">This chapter is not available</Text> : null}
+        {p.error ? <Text style={[styles.blocked, { color: c.accent }]} testID="player-error" accessibilityRole="alert">{p.error}</Text> : null}
         <Seek theme={theme} />
         <View style={styles.controls}>
           <Pressable onPress={p.skipPrev} testID="player-prev" accessibilityRole="button" accessibilityLabel="Previous chapter" style={styles.iconButton}><SkipGlyph size={22} color={c.text} direction="prev" /></Pressable>

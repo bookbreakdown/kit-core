@@ -20,6 +20,17 @@ camelCase in TypeScript; a JSON API may serve snake_case and the host adapter ma
 | `tracks[]` | `{ id, index, title, source, durationSeconds, artworkUrl?, backMatter }`; `source` is `{kind:'url',url}` or `{kind:'file',path}`. The host passes exactly the tracks the user may play. |
 | `finishTrackIndex` | Index of the last main-text track, or null. |
 
+## Player track recovery (`@libraryofages/player` 0.0.3)
+
+Optional `PlayerProvider.onTrackError(ctx)` receives `{ track, index, positionMs, message }`
+and returns `Promise<Track[] | null>`. On an engine error it is called once per failing source
+URL. Return the complete refreshed playlist in the same order: the provider applies local
+source resolution, reloads at the same index and exact position, preserves rate, and resumes
+only if playback was requested. Duplicate errors while refreshing share the attempt. A null
+result, thrown failure, or another error from the replacement stops recovery and exposes the
+message as `usePlayer().error` and in the full player. A new load or close invalidates pending
+work. Without this prop the prior engine error behavior and state shape are unchanged.
+
 ## BundleManifest
 | Field | Meaning |
 |---|---|

@@ -25,6 +25,8 @@ export interface PlayerProviderProps {
   onSwitchVoice?(id: string): void;
   onTrackBlocked?(index: number): void;
   onPlaylistEnd?(): void;
+  /** Refresh dead track URLs. Called once per failing URL; null leaves the error visible. */
+  onTrackError?(ctx: { track: Track; index: number; positionMs: number; message: string }): Promise<Track[] | null>;
   /** Milliseconds between progress saves while playing (default 5000). */
   saveIntervalMs?: number;
   children: ReactNode;
@@ -51,6 +53,8 @@ export interface PlayerState {
   /** The full player's panel to show when it opens (e.g. the reader's Chapters button). */
   openPanel: PlayerPanel | null;
   fading: boolean;
+  /** Present only after an opt-in recovery fails; omitted for legacy hosts. */
+  error?: string | null;
 }
 
 export interface PlayerApi {
