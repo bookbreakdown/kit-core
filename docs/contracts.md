@@ -20,14 +20,25 @@ camelCase in TypeScript; a JSON API may serve snake_case and the host adapter ma
 | `tracks[]` | `{ id, index, title, source, durationSeconds, artworkUrl?, backMatter }`; `source` is `{kind:'url',url}` or `{kind:'file',path}`. The host passes exactly the tracks the user may play. |
 | `finishTrackIndex` | Index of the last main-text track, or null. |
 
+## Player track recovery (`@libraryofages/player` 0.0.3)
+
+Optional `PlayerProvider.onTrackError(ctx)` receives `{ track, index, positionMs, message }`
+and returns `Promise<Track[] | null>`. On an engine error it is called once per failing source
+URL. Return the complete refreshed playlist in the same order: the provider applies local
+source resolution, reloads at the same index and exact position, preserves rate, and resumes
+only if playback was requested. Duplicate errors while refreshing share the attempt. A null
+result, thrown failure, or another error from the replacement stops recovery and exposes the
+message as `usePlayer().error` and in the full player. A new load or close invalidates pending
+work. Without this prop the prior engine error behavior and state shape are unchanged.
+
 ## BundleManifest
 | Field | Meaning |
 |---|---|
 | `id`, `title` | Book id and title. |
-| `content` | `{ url, byteSize, sha256, wordCount }` for the Markdown text. `sha256` is `string \| null`: null when the server could not hash the object; `byteSize` still verifies. |
+| `content` | `{ url, byteSize, sha256, wordCount }` for the Markdown text, or `null` for an audio-only title. `sha256` is `string \| null`: null when the server could not hash the object; `byteSize` still verifies. |
 | `cover` | `{ url, byteSize, sha256 \| null }` or null. |
 | `voices[]` | `{ voice, label, chapters[] }`; each chapter `{ chapterNumber, title, url, byteSize, sha256 \| null, durationSeconds, backMatter }`. Only voices and chapters the caller may download are present. |
-| `gated` | True when any part of this bundle is supporter-only. |
+| `gated` | True when any part of this bundle needs an entitlement (subscription or catalogue ownership). |
 | `offlineValidUntil` | ISO instant after which gated content needs an online check, or null when it never expires. |
 | `finishChapterIndex` | As in BookDocument. |
 
@@ -86,3 +97,9 @@ the same anchor so a stepper does not drift.
 Integrity: byte size is always checked against the manifest; sha256 when the manifest carries one
 and the platform hashed the file (web ≤ 64 MB, Android ≤ 16 MB). A mismatch deletes the file and
 marks the item `failed` with the reason.
+
+### Audio-only download manifests (gate 2)
+
+`BundleManifest.content` may be `null` for an audiobook-only title. Audio downloads enqueue only the selected voice’s chapter files; their identity, hashing, local resolution and validity rules are unchanged. `downloadText()` rejects a null-content manifest with a readable audiobook-only explanation before creating a download record. The host must offer no Read action for these titles; it must never invent an empty text URL or body. Existing nonnull manifests retain their download behavior.
+
+`DownloadsApi.resolveAudioSource(id, voice, chapterNumber)` resolves a completed chapter by its stable manifest identity, returning a local source or null. Hosts use it before URL matching so URL rotation never turns a downloaded chapter back into a network stream.

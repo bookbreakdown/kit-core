@@ -1,4 +1,4 @@
-export const PACKAGE = { name: '@libraryofages/player', version: '0.0.2' } as const;
+export const PACKAGE = { name: '@libraryofages/player', version: '0.0.4' } as const;
 export { PlayerProvider, usePlayer, usePlayerOptional } from './PlayerProvider';
 export { MiniPlayer } from './ui/MiniPlayer';
 export { FullPlayerSheet } from './ui/FullPlayerSheet';

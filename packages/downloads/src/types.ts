@@ -91,6 +91,8 @@ export interface DownloadsApi {
   remove(key: string): Promise<void>;
   deleteAll(kind?: DownloadKind): Promise<void>;
   resolveLocal(source: TrackSource): Promise<TrackSource>;
+  /** A completed local chapter by immutable book/voice/chapter identity, regardless of rotated URLs. */
+  resolveAudioSource(id: string, voice: string, chapterNumber: number): Promise<TrackSource | null>;
   readText(id: string): Promise<string | null>;
   refreshValidity(): Promise<void>;
   checkForUpdates(key: string): Promise<boolean>;

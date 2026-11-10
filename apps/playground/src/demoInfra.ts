@@ -26,7 +26,7 @@ export async function fixtureManifest(): Promise<BundleManifest> {
   const rewrite = async <T extends { url: string }>(f: T): Promise<T> => ({ ...f, url: f.url.startsWith('asset:') ? await assetUri(f.url.slice('asset:'.length)) : f.url });
   return {
     ...MANIFEST,
-    content: await rewrite(MANIFEST.content),
+    content: MANIFEST.content ? await rewrite(MANIFEST.content) : null,
     cover: MANIFEST.cover ? await rewrite(MANIFEST.cover) : null,
     voices: await Promise.all(MANIFEST.voices.map(async (v) => ({ ...v, chapters: await Promise.all(v.chapters.map(rewrite)) }))),
   };

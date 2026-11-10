@@ -1,4 +1,4 @@
-export const PACKAGE = { name: '@libraryofages/downloads', version: '0.0.2' } as const;
+export const PACKAGE = { name: '@libraryofages/downloads', version: '0.0.3' } as const;
 export { DownloadsProvider, useDownloads, useDownloadsOptional } from './DownloadsProvider';
 export { DownloadsList } from './ui/DownloadsList';
 export { transfer } from './transfer';

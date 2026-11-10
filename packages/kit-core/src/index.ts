@@ -1,4 +1,4 @@
-export const PACKAGE = { name: '@libraryofages/kit-core', version: '0.0.3' } as const;
+export const PACKAGE = { name: '@libraryofages/kit-core', version: '0.0.4' } as const;
 
 export * from './types';
 export { formatBytes, formatClock, wordCount } from './format';

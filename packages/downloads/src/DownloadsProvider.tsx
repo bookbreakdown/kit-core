@@ -14,7 +14,7 @@ const SETTINGS_KEY = 'settings';
 const DEFAULT_SETTINGS: DownloadsSettings = { wifiOnly: true, autoDownloadNext: false };
 
 function manifestHash(m: BundleManifest): string {
-  const parts = [m.content.url, m.content.byteSize, m.content.sha256 ?? '', m.cover?.byteSize ?? '', m.cover?.sha256 ?? ''];
+  const parts = [m.content?.url ?? '', m.content?.byteSize ?? '', m.content?.sha256 ?? '', m.cover?.byteSize ?? '', m.cover?.sha256 ?? ''];
   for (const v of m.voices) for (const c of v.chapters) parts.push(v.voice, c.chapterNumber, c.byteSize, c.sha256 ?? '');
   return parts.join('|');
 }
@@ -22,6 +22,7 @@ function manifestHash(m: BundleManifest): string {
 function filesFor(kind: DownloadKind, recordKey: string, m: BundleManifest, voice: string | null): DownloadFile[] {
   const mk = (name: string, f: ManifestFile, label: string): DownloadFile => ({ key: fileKey(recordKey, name), url: f.url, bytes: f.byteSize, sha256: f.sha256, done: false, label });
   if (kind === 'text') {
+    if (m.content === null) throw new Error('This title is an audiobook. There is no text to download.');
     const out = [mk('content', m.content, 'Text')];
     if (m.cover) out.push(mk('cover', m.cover, 'Cover'));
     return out;
@@ -240,6 +241,13 @@ export function DownloadsProvider(props: DownloadsProviderProps) {
     return source;
   }, [storage]);
 
+  const resolveAudioSource = useCallback(async (id: string, voice: string, chapterNumber: number): Promise<TrackSource | null> => {
+    const key = audioKey(id, voice);
+    const file = records.current.get(key)?.files.find((f) => f.key === fileKey(key, `ch${chapterNumber}`) && f.done);
+    if (!file) return null;
+    try { return await storage.localSource(file.key); } catch { return null; }
+  }, [storage]);
+
   const readText = useCallback(async (id: string): Promise<string | null> => {
     const r = records.current.get(textKey(id));
     const f = r?.files.find((x) => x.key.endsWith(':content') && x.done);
@@ -277,7 +285,7 @@ export function DownloadsProvider(props: DownloadsProviderProps) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const list = useMemo(() => items(), [items, tick, connection, settings]);
 
-  const api: DownloadsApi = useMemo(() => ({ downloadText, downloadAudio, pause, resume, cancel, retry, remove, deleteAll, resolveLocal, readText, refreshValidity, checkForUpdates, setOfflineValidUntil, setSettings, items, totals }), [cancel, checkForUpdates, deleteAll, downloadAudio, downloadText, items, pause, readText, refreshValidity, remove, resolveLocal, resume, retry, setOfflineValidUntil, setSettings, totals]);
+  const api: DownloadsApi = useMemo(() => ({ downloadText, downloadAudio, pause, resume, cancel, retry, remove, deleteAll, resolveLocal, resolveAudioSource, readText, refreshValidity, checkForUpdates, setOfflineValidUntil, setSettings, items, totals }), [cancel, checkForUpdates, deleteAll, downloadAudio, downloadText, items, pause, readText, refreshValidity, remove, resolveLocal, resolveAudioSource, resume, retry, setOfflineValidUntil, setSettings, totals]);
   const value = useMemo<DownloadsContextValue>(() => ({ ...api, list, settings, ready, usedBytes, freeBytes, connection }), [api, connection, freeBytes, list, ready, settings, usedBytes]);
 
   return <DownloadsContext.Provider value={value}>{children}</DownloadsContext.Provider>;
